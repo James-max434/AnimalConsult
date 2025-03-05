@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>寵物行為理解小助手</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .result-item {
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-left: 3px solid #4CAF50;
+        }
+        #imagePreview {
+            max-width: 100%;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>寵物行為理解小助手</h1>
+        
+        <div class="section">
+            <h2>上傳寵物照片</h2>
+            <input type="file" id="imageInput" accept="image/*">
+            <div id="imagePreview"></div>
+        </div>
+
+        <div class="section">
+            <h2>選擇寵物行為</h2>
+            <select id="behaviorType">
+                <option value="dog_circling">狗狗圍著人轉圈圈</option>
+                <option value="cat_grooming">貓咪頻繁舔毛</option>
+                <option value="dog_digging">狗狗頻繁挖地</option>
+                <option value="cat_scratching">貓咪抓傢具</option>
+                <option value="dog_barking">狗狗過度吠叫</option>
+                <option value="cat_hiding">貓咪躲藏不出來</option>
+            </select>
+            <button onclick="analyzeBehavior()">分析行為</button>
+        </div>
+
+        <div id="result" class="section"></div>
+    </div>
+
+    <script>
+        // 載入行為數據
+        const petBehaviors = {
+            "dog_circling": {
+                "title": "狗狗圍著人轉圈圈",
+                "reasons": [
+                    {"reason": "尋求注意力", "solution": "可以適當給予關注，但不要每次都立即回應，避免強化這個行為"},
+                    {"reason": "感到興奮", "solution": "進行一些冷靜訓練，教導狗狗保持冷靜的指令"},
+                    {"reason": "想要玩耍", "solution": "安排固定的玩耍時間，提供適當的玩具"},
+                    {"reason": "焦慮行為", "solution": "觀察是否有特定觸發因素，必要時諮詢獸醫"},
+                    {"reason": "表達需求", "solution": "確認是否需要去戶外或是到了餵食時間"}
+                ]
+            },
+            "cat_grooming": {
+                "title": "貓咪頻繁舔毛",
+                "reasons": [
+                    {"reason": "日常清潔", "solution": "這是正常行為，無需擔心"},
+                    {"reason": "壓力或焦慮", "solution": "觀察環境是否有變化，提供安全舒適的空間"},
+                    {"reason": "皮膚問題", "solution": "檢查是否有跳蚤或皮膚炎，必要時就醫"},
+                    {"reason": "過敏反應", "solution": "留意是否更換了貓砂或食物，尋找過敏源"},
+                    {"reason": "強迫症行為", "solution": "如果行為過度，建議諮詢獸醫"}
+                ]
+            },
+            "dog_digging": {
+                "title": "狗狗頻繁挖地",
+                "reasons": [
+                    {"reason": "尋找涼快地方", "solution": "確保有陰涼處，可提供降溫墊"},
+                    {"reason": "捕獵本能", "solution": "提供玩具或互動遊戲來滿足本能需求"},
+                    {"reason": "藏東西", "solution": "提供專門的玩具或零食，讓狗狗可以藏放"},
+                    {"reason": "無聊或缺乏運動", "solution": "增加戶外活動和運動量"},
+                    {"reason": "築巢行為", "solution": "可能是懷孕徵兆，建議就醫檢查"}
+                ]
+            },
+            "cat_scratching": {
+                "title": "貓咪抓傢具",
+                "reasons": [
+                    {"reason": "標記領地", "solution": "在適當位置放置貓抓板"},
+                    {"reason": "磨爪需求", "solution": "提供不同材質的貓抓柱"},
+                    {"reason": "伸展運動", "solution": "確保有足夠的活動空間"},
+                    {"reason": "壓力宣洩", "solution": "增加互動和玩耍時間"},
+                    {"reason": "注意力需求", "solution": "適時給予關注和獎勵"}
+                ]
+            },
+            "dog_barking": {
+                "title": "狗狗過度吠叫",
+                "reasons": [
+                    {"reason": "警戒行為", "solution": "訓練「安靜」指令，獎勵冷靜表現"},
+                    {"reason": "分離焦慮", "solution": "漸進式訓練獨處能力"},
+                    {"reason": "社交需求", "solution": "增加與其他狗狗的互動機會"},
+                    {"reason": "領地意識", "solution": "適當控制可見範圍，避免過度刺激"},
+                    {"reason": "無聊發洩", "solution": "增加運動量和智力遊戲"}
+                ]
+            },
+            "cat_hiding": {
+                "title": "貓咪躲藏不出來",
+                "reasons": [
+                    {"reason": "環境壓力", "solution": "檢查環境是否有變化，提供安全空間"},
+                    {"reason": "身體不適", "solution": "觀察是否有其他異常症狀，必要時就醫"},
+                    {"reason": "新環境適應", "solution": "給予時間適應，不要強迫互動"},
+                    {"reason": "社交壓力", "solution": "減少訪客或其他寵物的干擾"},
+                    {"reason": "自然習性", "solution": "提供適合躲藏的空間，尊重其習性"}
+                ]
+            }
+        };
+
+        // 圖片預覽
+        document.getElementById('imageInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                // 顯示圖片預覽
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.id = 'imagePreview';
+                    const previewDiv = document.getElementById('imagePreview');
+                    previewDiv.innerHTML = '';
+                    previewDiv.appendChild(img);
+                }
+                reader.readAsDataURL(file);
+
+                // 上傳並分析圖片
+                const formData = new FormData();
+                formData.append('file', file);
+
+                fetch('/analyze_image', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        alert(data.error);
+                        return;
+                    }
+                    // 顯示分析建議
+                    let html = '<h3>圖片分析建議</h3>';
+                    html += '<ul>';
+                    data.possible_behaviors.forEach(behavior => {
+                        html += `<li>${behavior}</li>`;
+                    });
+                    html += '</ul>';
+                    html += `<p>${data.suggestion}</p>`;
+                    document.getElementById('result').innerHTML = html;
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('圖片分析失敗');
+                });
+            }
+        });
+
+        // 分析行為
+        function analyzeBehavior() {
+            const behaviorType = document.getElementById('behaviorType').value;
+            const behavior = petBehaviors[behaviorType];
+            
+            if (behavior) {
+                let html = `<h3>${behavior.title}</h3>`;
+                behavior.reasons.forEach((item, index) => {
+                    html += `
+                        <div class="result-item">
+                            <h4>原因 ${index + 1}：${item.reason}</h4>
+                            <p>建議解決方案：${item.solution}</p>
+                        </div>
+                    `;
+                });
+                document.getElementById('result').innerHTML = html;
+            }
+        }
+    </script>
+</body>
+</html> 
